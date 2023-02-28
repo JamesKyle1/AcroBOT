@@ -1,0 +1,63 @@
+function [constraintFcns,isterminal,direction] = guardFunctions(t,q,contactMode)
+%Parameters
+m = 1;
+g = 9.81;
+n = length(q)/2;
+c = length(contactMode);
+
+%States
+x = q(1);
+y = q(2);
+dx = q(3);
+dy = q(4);
+q = [x;y];
+dq = [dx;dy];
+
+
+%Constraints
+a1 = y;
+a2 = x+y+1;
+a3 = (x-2)^2 + (y-1)^2 -2;
+
+A = [   0        1    ;
+        1        1    ;
+     2*x - 4  2*y - 2 ];
+dA = [   0   0 ;
+         0   0 ;
+         2   2 ];
+
+
+
+%Setting up dynamics
+input = zeros(n,1);
+
+M = [m  0 ;
+     0  m ];
+
+N = [0; m*g];
+
+
+%Solving dynamics
+block = [M         A'    ;
+         A   zeros(c, c) ];
+blockInv = inv(block);
+
+M_dagger = blockInv(1:n,1:n);
+A_dagger = blockInv(n+1:n+c,1:n);
+Lambda = blockInv(n+1:n+c,n+1:n+c);
+
+
+ddq = M_dagger*(input - N) - A_dagger'*dA*dq;
+% lambda = A_dagger*(input - N) - Lambda'*dA*dq;
+
+
+
+constraintFcns = [a1, a2, a3, ...
+                A(1,:)*ddq + dA(1,:)*dq, A(2,:)*ddq + dA(2,:)*dq, A(3,:)*ddq + dA(3,:)*dq];
+
+
+isterminal = 1.*ones(1,length(constraintFcns));
+direction = -1.*ones(1,length(constraintFcns));
+
+
+end

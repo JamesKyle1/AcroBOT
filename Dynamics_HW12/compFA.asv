@@ -1,0 +1,96 @@
+function contactMode = compFA(q)
+
+%Parameters
+m = 1;
+g = 9.81;
+n = length(q)/2;
+c = 3;
+
+%States
+x = q(1);
+y = q(2);
+dx = q(3);
+dy = q(4);
+q = [x;y];
+dq = [dx;dy];
+
+
+%Constraints
+a1 = y;
+a2 = x+y+1;
+a3 = (x-2)^2 + (y-1)^2 -2;
+
+A = [   0        1    ;
+        1        1    ;
+     2*x - 4  2*y - 2 ];
+dA = [   0   0 ;
+         0   0 ;
+         2   2 ];
+
+%Setting up dynamics
+input = zeros(n,1);
+
+M = [m  0 ;
+     0  m ];
+
+                
+% Generate complementarity conditions
+% check1 = (lambda(1) > 0 && A(1,:)*ddq + dA(1,:)*dq <= 0);
+% check2 = (lambda(2) > 0 && A(2,:)*ddq + dA(2,:)*dq <= 0);
+% check3 = (lambda(3) > 0 && A(3,:)*ddq + dA(3,:)*dq <= 0);
+% check = [check1, check2, check3];
+
+
+% If both complementarity conditions are satisfied, switch modes
+contactMode = [];
+
+if a1 <= 0
+    contactMode = [contactMode 1];
+end
+
+if a2 <= 0
+    contactMode = [contactMode 2];
+end
+
+if a3 <= 0
+    contactMode = [contactMode 3];
+end
+
+if ~isempty(contactMode)
+    r = length(contactMode);
+    if (sum(sum(ismember(contactMode,1)))>0)
+        N = [0;0];
+    else
+        N = [0; m*g];
+    end
+    %Solving dynamics
+    if isempty(contactMode)
+        block = M;
+    else
+        block = [M         A'    ;
+                 A   zeros(c, c) ];
+    end
+    blockInv = inv(block);
+    
+    M_dagger = blockInv(1:n,1:n);
+    A_dagger = blockInv(n+1:n+c,1:n);
+    Lambda = blockInv(n+1:n+c,n+1:n+c);
+    
+    ddq = M_dagger*(input - N) - A_dagger'*dA*dq;
+    lambda = -(A_dagger*(input - N) - Lambda*dA*dq);
+
+    contactModeCurr = contactMode;
+
+    for i = 1:length(contactMode)
+        j = contactMode(i);
+        if ~(lambda(i) >== 0 && A(1,:)*ddq + dA(1,:)*dq <= 0)
+            contactModeCurr = contactModeCurr(contactMode~=j);
+        end
+    end
+
+    contactMode = contactModeCurr;
+
+end
+
+     
+end

@@ -1,0 +1,68 @@
+function contactMode = compIV(q)
+
+
+%Parameters
+m = 1;
+n = length(q)/2;
+
+%States
+x = q(1);
+y = q(2);
+dx = q(3);
+dy = q(4);
+q = [x;y];
+dq = [dx;dy];
+
+
+%Constraints
+a1 = 2*y + x;
+a2 = 2*y - x;
+
+A = [  -1        2    ;
+        1        2    ];
+
+
+%Setting up dynamics
+M = [m  0 ;
+     0  m ];
+
+                
+% Generate complementarity conditions
+contactMode = [];
+
+if a1 <= 0
+    contactMode = [contactMode 1];
+end
+
+if a2 <= 0
+    contactMode = [contactMode 2];
+end
+
+
+if ~isempty(contactMode)
+    r = length(contactMode);
+    Acurr = A(contactMode,:);
+    block = [M         Acurr'    ;
+         Acurr   zeros(r, r) ];
+    blockInv = inv(block);
+    A_dagger = blockInv(n+1:n+r,1:n);
+    Lambda = blockInv(n+1:n+r,n+1:n+r);
+    
+    p = -Lambda*Acurr*dq;
+    dq_p = dq - A_dagger'*Acurr*dq;
+
+    contactModeCurr = contactMode;
+
+    for i = 1:length(contactMode)
+        j = contactMode(i);
+        if ~(p(i) <= 0 && Acurr(i,:)*dq_p <= 0)
+            contactModeCurr = contactModeCurr(contactMode~=j);
+        end
+    end
+
+    contactMode = contactModeCurr;
+
+end
+
+
+end
