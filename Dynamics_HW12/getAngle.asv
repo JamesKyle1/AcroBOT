@@ -1,0 +1,7 @@
+function alpha = getAngle(trajectoryPosition, trajectoryTiming, q)
+
+trajectoryPosition.*(trajectoryTiming > q)
+foo = trajectoryPosition(~(trajectoryTiming < q));
+alpha = foo(:,end);
+
+end

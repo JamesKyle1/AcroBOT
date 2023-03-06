@@ -1,0 +1,25 @@
+function [trajTime,trajPos] = minJerkTraj(x0, xf, ts, tf, n)
+
+
+if tf < ts
+    reverse = 1;
+else
+    reverse = 0;
+end
+
+t1 = min([ts tf]);
+t2 = max([ts tf]);
+
+t = ones(length(x0),1)*linspace(t1,t2,n);
+tau = t./t2;
+
+trajTime = t;
+trajPos = x0 + (xf - x0).*(6.*tau.^5 - 15.*tau.^4 + 10.*tau.^3);
+
+if reverse
+    for i = 1:length(trajTime(:,1))
+        trajTime(i,:) = flip(trajTime(i,:));
+    end
+end
+
+end

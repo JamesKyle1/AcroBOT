@@ -1,4 +1,4 @@
-function dx = dynamics(t,x,SYS)
+function dx = dynamics(t,x,contactMode,SYS)
 % Initialize time derivative of state vector as column vector
 dx = zeros(length(x),1);
 
@@ -13,16 +13,17 @@ dt = SYS.dt;
 
 
 % Compute system inputs
-archRegion = [-pi/4;-5*pi/12];
-hollowRegion = [-7*pi/12;-3*pi/4];
-alpha = pi/4;
-if q(1) - archRegion(1) < 0 && q(1) - archRegion(2) > 0
-    alpha = [0;alpha;alpha];
-elseif q(1) - hollowRegion(1) < 0 && q(1) - hollowRegion(2) > 0
-    alpha = -[0;alpha;alpha];
+% alpha = simpleTraj(q);
+
+if contactMode == 2 || contactMode == 3
+    currTrajPos = SYS.trajectoryPos;
+    currTrajTime = SYS.trajectoryTime;
+    goal_angle = getAngle(currTrajPos,currTrajTime,q(1));
+    alpha = [0;goal_angle];
 else
-    alpha = [0;0;0];
+    alpha = zeros(3,1);
 end
+
 
 inputs = positionPID(q,dq,dt,alpha);
 inputs = [0;inputs(2:end)];

@@ -1,9 +1,9 @@
-function [constraintFcns,isterminal,direction] = guardFunctions(t,x,contactMode)
+function [constraintFcns,isterminal,direction] = guardFunctions(t,x,contactMode,hollowRegion,archRegion)
 % Split up state vector into generalized coordinates and velocities
-q = x(1:2);
-dq = x(3:4);
+q = x(1:3);
+dq = x(4:6);
 
 
-constraintFcns = 1; % The value that we want to be zero
-isterminal = 1;  % Halt integration z
-direction = -1;   % The zero can be approached from either direction
+constraintFcns = [dq(1); ones(2,1).*(2*pi + q(1)) - archRegion; ones(2,1).*(2*pi + q(1)) - hollowRegion]; % The value that we want to be zero
+isterminal = ones(length(constraintFcns),1);  % Halt integration z
+direction = [1; -ones(length(constraintFcns)-1,1)];   % The zero can be approached from either direction
