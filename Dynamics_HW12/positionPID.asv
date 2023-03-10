@@ -1,46 +1,29 @@
-function inputs = positionPID(q,dq,t,alpha)
+function inputs = positionPID(q,dq,dt,alpha)
 % This funciton will take in the dynamics of gymnastics bot and return
 % a set of inputs to the system to drive the desired position
-persistent integral e_prev t_prev alpha_prev
+persistent integral
 
-inputs = zeros(length(q),1);
+kp = [0;40;10];
+ki = [0;0.5;0.5];
+kd = [0;3;5];
 
-if isempty(alpha_prev)
-    alpha_prev = alpha;
-else alpha ~= alpha_prev
-    alpha_prev = alpha;
-    integral = [];
-end
-
-if isempty(e_prev)
-    e_prev = zeros(3,1);
-end
-if isempty(t_prev)
-    t_prev = 0;
-end
-
-kp = 23.2817;
-ki = 13.5832;
-kd = 9.9763;
-
-T = (t-t_prev);
 
 e = alpha - q;
 
-if isempty(integral)
-    integral = ki.*e.*T;
-else
-    integral = integral + ki.*e.*T;
+proportional = kp.*e;
+derivative = kd.*dq;
+integral = ki.*e.*dt;
+
+
+inputs = proportional - derivative + integral;
+
+for i = 1:3
+    if inputs(i) > 1.2
+        inputs(i) = 1.2;
+    elseif inputs(i) < -1.2
+        inputs(i) = -1.2;
+    end
 end
 
-proportional = kp.*e;
-derivative = kd.*(e - e_prev)./T;
-
-
-inputs = proportional + integral + derivative;
-
-
-e_prev = e;
-t_prev = t;
 
 end

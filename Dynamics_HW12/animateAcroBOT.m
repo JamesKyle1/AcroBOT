@@ -48,7 +48,29 @@ ylabel('y')
 
 % draw
 base = [0;0];
-L = 1;
+L = sum(l);
+
+xRegionArch = [base(1) L*cos(SYS.archRegion(1));...
+               base(1) L*cos(SYS.archRegion(2))];
+%                L*cos(SYS.archRegion(1)) L*cos(SYS.archRegion(2))];
+yRegionArch = [base(1) L*sin(SYS.archRegion(1));...
+               base(1) L*sin(SYS.archRegion(2))];
+%                L*sin(SYS.archRegion(1)) L*sin(SYS.archRegion(2))];
+
+arch = line(xRegionArch', yRegionArch', 'Color', [0 0.4470 0.7410],'LineStyle','--','linewidth',3);
+
+
+xRegionHollow = [base(1) L*cos(SYS.hollowRegion(1));...
+               base(1) L*cos(SYS.hollowRegion(2))];
+%                L*cos(SYS.hollowRegion(1)) L*cos(SYS.hollowRegion(2))];
+yRegionHollow = [base(1) L*sin(SYS.hollowRegion(1));...
+               base(1) L*sin(SYS.hollowRegion(2))];
+%                L*sin(SYS.hollowRegion(1)) L*sin(SYS.hollowRegion(2))];
+
+arch = line(xRegionHollow', yRegionHollow', 'Color', [0.4660 0.6740 0.1880],'LineStyle','--','linewidth',3);
+
+
+
 for ii = 1:length(x)
     a = tic;
     

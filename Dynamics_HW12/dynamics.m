@@ -15,7 +15,7 @@ dt = SYS.dt;
 % Compute system inputs
 % alpha = simpleTraj(q);
 
-if contactMode == 2 || contactMode == 3
+if contactMode == 2 || contactMode == 4
     currTrajPos = SYS.trajectoryPos;
     currTrajTime = SYS.trajectoryTime;
     goal_angle = getAngle(currTrajPos,currTrajTime,q(1));

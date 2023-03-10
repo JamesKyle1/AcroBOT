@@ -4,6 +4,7 @@ dx = zeros(length(x),1);
 
 % Split up state vector into generalized coordinates and velocities
 q = x(1:3);
+q(1) = 0;
 dq = x(4:6);
 
 
@@ -15,16 +16,16 @@ dt = SYS.dt;
 % Compute system inputs
 % alpha = simpleTraj(q);
 
-if contactMode == 2 || contactMode == 3
-    currTrajPos = SYS.trajectory;
-    currTrajTime = 
-    goal_angle = getAngle(currTraj,q(2:3));
-    alpha = [0;goal_angle];
-else
-    alpha = zeros(3,1);
-end
+% if contactMode == 2 || contactMode == 3
+%     currTrajPos = SYS.trajectoryPos;
+%     currTrajTime = SYS.trajectoryTime;
+%     goal_angle = getAngle(currTrajPos,currTrajTime,q(1));
+%     alpha = [0;goal_angle];
+% else
+%     alpha = zeros(3,1);
+% end
 
-
+alpha = zeros(3,1);
 inputs = positionPID(q,dq,dt,alpha);
 inputs = [0;inputs(2:end)];
 
