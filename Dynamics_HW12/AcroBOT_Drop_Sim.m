@@ -7,8 +7,6 @@ tstart = 0;
 tfinal = 10;
 dt = 0.01;
 
-% Timing loop
-tic
 
 % Initialize state and contact mode
 q0 = [0;0;0];
@@ -50,10 +48,10 @@ gymnastSYS.archRegion = archRegion;
 gymnastSYS.hollowRegion = hollowRegion;
 
 % Simulate
+tic
 [t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
+toc
 
-% Ending Timer
-simTime = toc
 
 %% 
 
@@ -99,4 +97,61 @@ legend('Interpreter','Latex');
 
 %% 
 
-animateAcroBOT(x, dt, gymnastSYS);
+% animateAcroBOT(x, dt, gymnastSYS);
+
+
+%% Simulating parameter changes
+
+
+tic
+c_vector = 0.1:0.1:0.9;
+trials = cell(length(c_vector),1);
+for i = 1:length(c_vector)
+    gymnastSYS.c = c_vector(i).*gymnastSYS.l;
+    [t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
+    trials{i} = {t,x,te,xe,ie};
+end
+toc
+
+%% 
+
+foo = trials{1}(1);
+N = length(foo{1});
+
+t = zeros(N,length(trials));
+th1 = zeros(N,length(trials));
+th2 = zeros(N,length(trials));
+th3 = zeros(N,length(trials));
+
+figure();
+subplot(2,1,1);
+hold on;
+for i = 1:length(trials)
+    currTime = trials{i}{1};
+    currXout = trials{i}{2};
+    
+    dispName = string("C = " + c_vector(i));
+    plot(currTime,currXout(:,5),'DisplayName',dispName);
+    
+end
+hold off;
+legend()
+title('$\theta_2$','Interpreter','Latex')
+ylabel('$\theta [rad]$');
+xlabel('Time [s]');
+
+subplot(2,1,2);
+hold on;
+for i = 1:length(trials)
+    currTime = trials{i}{1};
+    currXout = trials{i}{2};
+    
+    dispName = string("C = " + c_vector(i));
+    plot(currTime,currXout(:,6),'DisplayName',dispName);
+    
+end
+hold off;
+legend()
+title('$\theta_3$','Interpreter','Latex')
+ylabel('$\theta [rad]$');
+xlabel('Time [s]');

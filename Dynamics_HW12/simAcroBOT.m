@@ -55,7 +55,7 @@ while tstart < tfinal
 
      % Break if done with simulation
     if isempty(ieout)
-        disp('Final time reached');
+%         disp('Final time reached');
         break; % abort if simulation has completed
     end
 
