@@ -1,5 +1,4 @@
 function [t,x,te,xe,ie] = simAcroBOT(x0,tspan,SYS)
-
 % Initialize function specific variables
 contactMode = [1];
 n = 50; % number of points in trajectory
@@ -22,6 +21,7 @@ x = x0';
 te = [];
 xe = [];
 ie = [];
+nSwings = 0;
 
 while tstart < tfinal
     % Tell ode45 what event function to use and set max step size to make sure
@@ -77,6 +77,12 @@ while tstart < tfinal
 %         trajTimeTracker = [trajTimeTracker; trajTime'];
         currSYS.trajectoryPos = trajPos;
         currSYS.trajectoryTime = trajTime;
+    elseif ieout == 1
+        nSwings = nSwings + 1;
+
+        if nSwings == 3
+            break
+        end
     else
         contactMode = 1;
         [currSYS.trajectoryTime, currSYS.trajectoryPos] = minJerkTraj(q(2:3), zeros(2,1), hollowRegion(1), hollowRegion(2), n);

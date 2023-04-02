@@ -43,4 +43,5 @@ dx(1:3) = dq;
 % Time derivative of generalized velocities are accelerations (from EOM)
 dx(4:6) = ddq;
 
+
 end

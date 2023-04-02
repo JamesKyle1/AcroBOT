@@ -39,6 +39,7 @@ h = animatedline('LineStyle', ':', 'LineWidth', 1.5);
 manipulator = [];
 endeffector = [];
 joints = [];
+com = [];
 
 % Set up axes
 axis equal
@@ -79,16 +80,21 @@ for ii = 1:length(x)
     q1 = x(ii,1);
     q2 = x(ii,2);
     q3 = x(ii,3);
+    comX = (m(1)*c(1)*cos(q1) + m(2)*(l(1)*cos(q1) + c(2)*cos(q1+q2)) + m(3)*(l(1)*cos(q1) + l(2)*cos(q1+q2) + c(3)*cos(q1+q2+q3)))/sum(m);
+    comY = (m(1)*c(1)*sin(q1) + m(2)*(l(1)*sin(q1) + c(2)*sin(q1+q2)) + m(3)*(l(1)*sin(q1) + l(2)*sin(q1+q2) + c(3)*sin(q1+q2+q3)))/sum(m);
     joint1 = [l(1)*cos(q1);l(1)*sin(q1)];
     joint2 = [l(1)*cos(q1) + l(2)*cos(q1+q2);l(1)*sin(q1) + l(2)*sin(q1+q2)]; 
     joint3 = [l(1)*cos(q1) + l(2)*cos(q1+q2) + l(3)*cos(q1+q2+q3);l(1)*sin(q1) + l(2)*sin(q1+q2) + l(3)*sin(q1+q2+q3)];
     delete(manipulator);
     delete(endeffector);
     delete(joints);
+    delete(com);
     manipulator = line([base(1), joint1(1), joint2(1), joint3(1)], [base(2), joint1(2), joint2(2), joint3(2)], 'Color', [0;0;0],'LineStyle','-');
     joints = line([joint1(1), joint2(1)], [joint1(2), joint2(2)],'Marker','.', 'MarkerSize', 20);
     endeffector = line(joint3(1), joint3(2), 'Color', [1;0;0],'Marker','.', 'MarkerSize', 20);
     addpoints(h,joint3(1), joint3(2));
+    com = line(comX, comY, 'Color', [0;0;0],'Marker','.', 'MarkerSize', 20);
+    
     
     drawnow limitrate
     

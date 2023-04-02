@@ -4,7 +4,7 @@ clear all;clc;close all;
 % Define start and stop times, set a dt to keep outputs at constant time
 % interval
 tstart = 0;
-tfinal = 10;
+tfinal = 17;
 dt = 0.01;
 
 
@@ -13,9 +13,11 @@ q0 = [0;0;0];
 disp(['Initial condition: [', num2str(q0'), ']''.'])
 dq0 = [0;0;0];
 x0 = [q0;dq0];
-gymnastSYS.m = [0.3;0.3;0.3];
+gymnastSYS.m = [0.1564;0.23764;0.1564];
 gymnastSYS.l = [0.254;0.254;0.254];
+% gymnastSYS.l = lengths(1,:)';
 gymnastSYS.c = gymnastSYS.l.*0.1;
+% gymnastSYS.c = COM_vec(28,:)';
 gymnastSYS.dt = dt;
 %% Main Loop
 
@@ -74,77 +76,34 @@ xlabel('Time [s]');
 legend('Interpreter','Latex');
 
 
+% figure();
+% th1d = x(:,4);
+% set(gcf,'WindowState','maximized');
+% hold on
+% plot(t,th1d,'linewidth',2,'DisplayName','$\dot{\theta_1}$');
+% hold off
+% ylabel('$\dot{\theta_1} [rad]$');
+% xlabel('Time [s]');
+% legend('Interpreter','Latex');
+
+
 %% Animating Test Simulation
 
-% animateAcroBOT(x, dt, gymnastSYS);
+animateAcroBOT(x, dt, gymnastSYS);
 
 
-%% Simulating Parameter Changes
-
-
-tic
-c_vector = 0.1:0.1:0.9;
-trials = cell(length(c_vector),1);
-for i = 1:length(c_vector)
-    gymnastSYS.c = c_vector(i).*gymnastSYS.l;
-    [t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
-    trials{i} = {t,x,te,xe,ie};
-end
-toc
-
-%% 
-
-foo = trials{1}(1);
-N = length(foo{1});
-
-t = zeros(N,length(trials));
-th1 = zeros(N,length(trials));
-th2 = zeros(N,length(trials));
-th3 = zeros(N,length(trials));
-
-figure();
-subplot(2,1,1);
-hold on;
-for i = 1:length(trials)
-    currTime = trials{i}{1};
-    currXout = trials{i}{2};
-    
-    dispName = string("C = " + c_vector(i));
-    plot(currTime,currXout(:,2),'DisplayName',dispName);
-    
-end
-hold off;
-legend()
-title('$\theta_2$','Interpreter','Latex')
-ylabel('$\theta [rad]$');
-xlabel('Time [s]');
-
-subplot(2,1,2);
-hold on;
-for i = 1:length(trials)
-    currTime = trials{i}{1};
-    currXout = trials{i}{2};
-    
-    dispName = string("C = " + c_vector(i));
-    plot(currTime,currXout(:,3),'DisplayName',dispName);
-    
-end
-hold off;
-legend()
-title('$\theta_3$','Interpreter','Latex')
-ylabel('$\theta [rad]$');
-xlabel('Time [s]');
-
-%% Aggregating Parameter Change Vectors
+%% =====================================================================
+%  ==============  Building Parameter Change Vectors  ==================
+%  =====================================================================
 
 % Lengths iterations
-dl = 0.05;
+dl = 0.03;
 
-L = 2.3; % [ft]
+L = 27/12; % [ft]
 L = L*0.3048; % converting to [m]
 
 l_min = 0.1;
-l_max = 0.5;
+l_max = L-2*l_min;
 l1_vector = l_min:dl:l_max;
 
 n = length(l1_vector);
@@ -155,7 +114,7 @@ for i = 1:n
     % iterating through l1 lengths
     l1 = l_min + dl*(i-1);
 
-    for j = 1:(n-i)
+    for j = 1:length(l_min:dl:L-l1-l_min)
         % iterating through l2/l3 ratios
         l2 = l_min + dl*(j-1);
         l3 = L-l1-l2;
@@ -167,7 +126,7 @@ lengths = lengths(2:end,:);
 
 
 % COM placement iterations
-dr = 0.2;
+dr = 0.1;
 r_min = 0.1;
 r_max = 0.9;
 ratios = r_min:dr:r_max;
@@ -225,43 +184,43 @@ mass_vec = mass_vec(2:end,:);
 
 n_iter = length(COM_vec)*length(lengths);
 
-% tic
-% [t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
-% dt = toc;
-% 
-% Min = [l_min; r_min; m_min];
-% Max = [l_max; r_max; m_max];
-% Step = [dl; dr; dm];
-% Variable = ["Link Length";"COM Placement";"Mass"];
-% 
-% disp(table(Variable, Min, Max, Step))
-% fprintf(" Number of Trials: " + n_iter)
-% fprintf("\n Sim Iter Time Est.: " + dt + " s")
-% fprintf("\n Full Run Time Est.: " + mod(n_iter*dt/60,60) + " min")
-% fprintf("\n");
+tic
+[t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
+dt = toc;
 
-%% ======================================================================
-% Experimenting with saving data from experiment
+Min = [l_min; r_min; m_min];
+Max = [l_max; r_max; m_max];
+Step = [dl; dr; dm];
+Variable = ["Link Length";"COM Placement";"Mass"];
+
+disp(table(Variable, Min, Max, Step))
+fprintf(" Number of Trials: " + n_iter)
+fprintf("\n Sim Iter Time Est.: " + dt + " s")
+fprintf("\n Full Run Time Est.: " + mod(n_iter*dt/60,60) + " min")
+fprintf("\n");
+
+
+%% ================  Building Simulaiton Loops  ========================
 
 tstart = 0;
-tfinal = 10;
+tfinal = 7;
 dt = 0.01;
 
 
 % Initialize state and contact mode
 q0 = [0;0;0];
-disp(['Initial condition: [', num2str(q0'), ']''.'])
 dq0 = [0;0;0];
 x0 = [q0;dq0];
-gymnastSYS.m = [0.3;0.3;0.3];
-gymnastSYS.l = [0.254;0.254;0.254];
-gymnastSYS.c = gymnastSYS.l.*0.1;
+
 gymnastSYS.dt = dt;
+gymnastSYS.m = [0.1564;0.23764;0.1564]; %Setting mass [kg]
 
 
 % Initialize simulation time vector
 tspan = tstart:dt:tfinal;
 
+
+% Initialize control input regions
 alpha = pi/4;
 beta = pi/6;
 gamma = pi/4;
@@ -274,16 +233,58 @@ gymnastSYS.beta = beta;
 gymnastSYS.gamma = gamma;
 gymnastSYS.archRegion = archRegion;
 gymnastSYS.hollowRegion = hollowRegion;
+%% 
+
+% Initializing folder for data
+folderPath = "Apr_2_2023_Single_COM_Set_2/";
+
+if exist(folderPath,"dir") ~= 0
+    error("File name already exists");
+else
+    evalin("base",'mkdir ' + folderPath);
+end
 
 
-% Simulate
+% Running simulation over range of parameters
+% n_lengths = length(lengths);
+n_lengths = length(lengths);
+% n_COM = length(COM_vec);
+n_COM = 1;
+
+disp("Simulating Parameter Changes...");
 tic
-[t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
+for i = 1:n_lengths
+    li = lengths(i,:)';
+%     li = [0.2200    0.2200    0.2458]';
 
-folderPath = "expTest/";
-fileName = "test2";
-filePath = folderPath + fileName;
-params = [gymnastSYS.l' gymnastSYS.c' gymnastSYS.m'];
+    for j = 1:n_COM
+        disp("Trial #: " + ((i-1)*n_COM+j) + "/" + n_lengths*n_COM);
 
-writeAcroBOTData([t x],params,filePath);
+%         ci = COM_vec(j,:)'.*li;
+        ci = [0.5; 0.5; 0.5].*li;
+
+        % Create new file name
+        fileName = "L_" + i + "_COM_" + j;
+        filePath = folderPath + fileName;
+
+        params = [li; ci; gymnastSYS.m]';
+
+        % Simulate and write data to file
+        gymnastSYS.l = li;
+        gymnastSYS.c = ci;
+
+        [t,x,te,xe,ie] = simAcroBOT(x0,tspan,gymnastSYS);
+
+        writeAcroBOTData([t x],params,filePath);
+        
+    end
+
+
+end
 toc
+
+disp("Simulations Complete");
+
+
+
+
