@@ -20,9 +20,9 @@
 #define GAMMA           PI/4.0
 
 
-/ ================================== /
-/ ======== Dynamixel Setup ========= /
-/ ================================== /
+// ================================== /
+// ======== Dynamixel Setup ========= /
+// ================================== /
 
 DynamixelWorkbench dxl_wb;
 
@@ -40,9 +40,9 @@ const int analogInPin = A0;
 
 
 
-/ ================================= /
-/ ======= Controller Setup ======== /
-/ ================================= /
+// ================================= /
+// ======= Controller Setup ======== /
+// ================================= /
 
 double hollow_region[2] = {PI + BETA + GAMMA, PI + BETA};
 double arch_region[2] = {2 * PI - BETA, 2 * PI - BETA - GAMMA};
@@ -107,12 +107,11 @@ void loop() {
   double t1 = 5;
   double t2 = 1;
 
-  double q_curr[3] = {1.0, 1.0, 1.0}; //Should be set to the current states of the joints
-  double* q_n = get_states(); //Same as q_curr
+  double* q_curr = get_states(); //Should be set to the current states of the joints
   double alpha[3] = {0.0, 0.0, 0.0};
 
-  double** traj = calloc(n, 3 * sizeof(double));
-  double* q_goal = malloc(3 * sizeof(double));
+  double** traj = static_cast<double **>(calloc(n, 3 * sizeof(double)));
+  double* q_goal = static_cast<double *>(malloc(3 * sizeof(double)));
 
   int guardTriggered = checkGuard(q_curr, hollow_region, arch_region);
 
@@ -149,10 +148,17 @@ void loop() {
   } else {
     q_goal = find_closest_point(q_curr, traj, n);
   }
+  
 
-
-
-
+  Serial.print("J0: ");
+  Serial.print(q_curr[0]);
+  Serial.print("\t");
+  Serial.print("J1: ");
+  Serial.print(q_curr[1]);
+  Serial.print("\t");
+  Serial.print("J2: ");
+  Serial.print(q_curr[2]);
+  Serial.println();
 
 
 
@@ -162,7 +168,13 @@ double* get_states() {
   //read servo positions
   //Inputs: not sure
   //Outputs: q{Vector} --> Servo positions 3x1
-  double* q = malloc(3 * sizeof(double));
+  double* q = static_cast<double *>(malloc(3 * sizeof(double)));
+
+  q[0] = getJ0EncoderPos();
+
+  q[1] = getM1Position();
+
+  q[2] = getM2Position();
 
   return q;
 }
@@ -186,7 +198,7 @@ double* find_closest_point(double* q, double** traj, int n) {
 }
 
 double* linspace(double t1, double t2, int n) {
-  double* vec = malloc(n * sizeof(double));
+  double* vec = static_cast<double *>(malloc(n * sizeof(double)));
   double dt = (t2 - t1) / (n - 1);
   for (int i = 0; i < n; i++) {
     vec[i] = t1 + i * dt;
@@ -197,10 +209,8 @@ double* linspace(double t1, double t2, int n) {
 double** calculate_traj(double* q_curr, double* q_goal, double ts, double tf, int n) {
   int reverse;
   double t1, t2;
-  double** trajPos = malloc(n * sizeof(double*));
-  for (int i = 0; i < n; i++) {
-    trajPos[i] = malloc(3 * sizeof(double));
-  }
+  double** trajPos = static_cast<double **>(calloc(3,n * sizeof(double*)));
+  
   if (tf < ts) {
     t1 = tf;
     t2 = ts;
@@ -225,7 +235,7 @@ double** calculate_traj(double* q_curr, double* q_goal, double ts, double tf, in
 int checkGuard(double* q_n, double* hollow_region, double* arch_region) {
   static double val_prev[4] = {0.0, 0.0, 0.0, 0.0};
 
-  double* val_curr = malloc(4 * sizeof(double));
+  double* val_curr = static_cast<double *>(malloc(4 * sizeof(double)));
   int trippedGuard = 0;
 
 
@@ -244,9 +254,9 @@ int checkGuard(double* q_n, double* hollow_region, double* arch_region) {
     trippedGuard = 4;
   }
 
-  for (int i = 0; i < 4; i++) {
-    val_prev[i] = val_curr[i];
-  }
+    for (int i = 0; i < 4; i++) {
+        val_prev[i] = val_curr[i];
+    }
 
   return trippedGuard;
 }

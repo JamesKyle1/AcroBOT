@@ -3,7 +3,8 @@
 
 
 
-float getJ0EncoderPos() {
+//read encoder position from the arduino UNO
+double getJ0EncoderPos() {
   // send command to UNO
   Serial1.print('e');
   static byte ndx = 0;
@@ -14,13 +15,12 @@ float getJ0EncoderPos() {
     if (rc != '\n') {
       receivedChars[ndx] = rc;
       ndx++;
-    }
-    else {
+    } else {
       receivedChars[ndx] = '\0';  // terminate the string
       ndx = 0;
     }
   }
-  encoderPos = atof(receivedChars) ;
+  encoderPos = atof(receivedChars);
   return encoderPos;
 }
 
@@ -28,9 +28,8 @@ float getJ0EncoderPos() {
 //return the reading from INA 169 current sensor
 // now it returns the raw ADC values
 // TODO -  convert the ADC value to current on Amperes
-int getMotorLoads()
-{
-  return(analogRead(analogInPin));
+int getMotorLoads() {
+  return (analogRead(analogInPin));
 }
 
 // set M1 position
@@ -51,68 +50,68 @@ void setM2Position(float pos) {
 }
 
 // return the joint position of M1
-float getM1Position()
-{
-  // TODO
+double getM1Position() {
+
+  int32_t get_data = 0;
+  dxl_wb.itemRead(dxl_id0, "Present_Position", &get_data);  //, &log);
+  return get_data;
 }
 
 // return the joint position of M2
-float getM2Position()
-{
-  // TODO
+double getM2Position() {
+  int32_t get_data = 0;
+  dxl_wb.itemRead(dxl_id1, "Present_Position", &get_data);  //, &log);
+  return get_data;
 }
 
 // enable torque of M1
 void enableM1() {
-  dxl_wb.torqueOn(dxl_id0 );
+  dxl_wb.torqueOn(dxl_id0);
   //dxl_wb.torque(dxl_id0, 1);
 }
 void enableM2() {
-  dxl_wb.torqueOn(dxl_id1 );
+  dxl_wb.torqueOn(dxl_id1);
   //dxl_wb.torque(dxl_id1,  1);
 }
-// disable torque 
+// disable torque
 void disableM1() {
-  dxl_wb.torqueOff(dxl_id0 );
- // dxl_wb.torque(dxl_id0, 0);
+  dxl_wb.torqueOff(dxl_id0);
+  // dxl_wb.torque(dxl_id0, 0);
 }
 
 void disableM2() {
-  dxl_wb.torqueOff(dxl_id1 );
+  dxl_wb.torqueOff(dxl_id1);
   //dxl_wb.torque(dxl_id1, 0);
 }
 
-int testSubSystems()
-{
-Serial.println(" Testing start");
+int testSubSystems() {
+  Serial.println(" Testing start");
 
-Serial.print(" Current Sensor ADC  = ");
-Serial.println(getMotorLoads());
+  Serial.print(" Current Sensor ADC  = ");
+  Serial.println(getMotorLoads());
 
-Serial.print(" Encoder Position1 = ");
-Serial.println(getJ0EncoderPos());
-
-setM1Position(100);
-setM2Position(100);
-delay(1000);
-setM1Position(1000);
-setM2Position(1000);
-delay(1000);
-disableM1();
-disableM2();
-
-delay(3000);
-
-enableM1();
-enableM2();
-delay(100);
-setM1Position(100);
-setM2Position(100);
-
-delay(1000);
-disableM1();
-disableM2();
+  Serial.print(" Encoder Position1 = ");
+  Serial.println(getJ0EncoderPos());
 
 
+  setM1Position(512);
+  setM2Position(512);
+  delay(1000);
+  //setM1Position(600);
+  //setM2Position(600);
+  //delay(1000);
+  //disableM1();
+  //disableM2();
 
+  //delay(1000);
+
+  //enableM1();
+  //enableM2();
+  //delay(100);
+  //setM1Position(400);
+  //setM2Position(400);
+
+  //delay(1000);
+  //disableM1();
+  //disableM2();
 }
