@@ -15,9 +15,9 @@
 #define BAUDRATE  1000000
 
 #define FREE_FALL       0
-#define ALPHA           PI/4.0
-#define BETA            PI/6.0
-#define GAMMA           PI/4.0
+#define ALPHA           45.0
+#define BETA            250.0
+#define GAMMA           45.0
 
 
 // ================================== /
@@ -48,11 +48,11 @@ int n = 20;
 
 double alpha[3] = {0.0, 0.0, 0.0};
 
-double** traj = static_cast<double **>(malloc(n * 3 * sizeof(double)));
-double* q_goal = static_cast<double *>(malloc(3 * sizeof(double)));
+double** traj = nullptr;
+double* q_goal = new double[3];
 
-double hollow_region[2] = {PI + BETA + GAMMA, PI + BETA};
-double arch_region[2] = {2 * PI - BETA, 2 * PI - BETA - GAMMA};
+double* hollow_region = new double[2];
+double* arch_region = new double[2];
 
 int contactMode = 0;
 double tol = 1e-6;
@@ -104,6 +104,11 @@ void setup() {
   delay(100);
   testSubSystems();
 
+  arch_region[0] = BETA;
+  arch_region[1] = BETA - GAMMA;
+  hollow_region[0] = 90.0 + (270.0 - BETA + GAMMA);
+  hollow_region[1] = 90.0 + (270.0 - BETA);
+
 }
 
 void loop() {
@@ -113,9 +118,13 @@ void loop() {
   double t2 = 5;
 
   double q0 = getJ0EncoderPos();
-  double q1 = getM1Position();
-  double q2 = getM2Position();
+  double q1 = getM1Position() * 300.0 / 1024.0 - 150.0;
+  double q2 = getM2Position() * 300.0 / 1024.0 - 150.0;
   double q_curr[3] = {q0, q1, q2}; //Should be set to the current states of the joints
+
+  alpha[0] = ALPHA;
+  alpha[1] = -ALPHA;
+  alpha[2] = ALPHA;
 
   int guardTriggered = checkGuard(q_curr, hollow_region, arch_region);
 
@@ -135,40 +144,45 @@ void loop() {
       alpha[1] = 0.0;
       alpha[2] = 0.0;
     }
+
+    calculate_traj(traj, q_curr, alpha, t1, t2, n);
   }
 
-  Serial.println("Calculating Trajectory...");
-  traj = calculate_traj(q_curr, alpha, t1, t2, n);
-  Serial.println("Finished Calculating Trajectory");
-  //  }
-
-
   //Set goal angle based on current position
-  //  if ((q_goal[0] - alpha[0]) * (q_goal[0] - alpha[0]) < tol * tol) {
-  //    if ((q_goal[1] - alpha[1]) * (q_goal[1] - alpha[1]) < tol * tol) {
-  //      if ((q_goal[2] - alpha[2]) * (q_goal[2] - alpha[2]) < tol * tol) {
-  //        q_goal[0] = alpha[0];
-  //        q_goal[1] = alpha[1];
-  //        q_goal[2] = alpha[2];
-  //      }
-  //    }
-  //  } else {
+  if (contactMode == 1 || contactMode == 3) {
+    q_goal[0] = 0.0;
+    q_goal[1] = 0.0;
+    q_goal[2] = 0.0;
+  }
+  
+  if (contactMode == 2 || contactMode == 4) {
+    if ((q_goal[0] - alpha[0]) * (q_goal[0] - alpha[0]) < tol * tol) {
+      if ((q_goal[1] - alpha[1]) * (q_goal[1] - alpha[1]) < tol * tol) {
+        if ((q_goal[2] - alpha[2]) * (q_goal[2] - alpha[2]) < tol * tol) {
+          q_goal[0] = alpha[0];
+          q_goal[1] = alpha[1];
+          q_goal[2] = alpha[2];
+        }
+      }
+    } else {
+      find_closest_point(q_goal, q_curr, traj, n);
+    }
+  }
+
   //  Serial.print("Trajectory: {");
-  //  for (int i = 0; i < n; i++) {
-  //    Serial.print(traj[1][i]);
-  //    Serial.print(", ");
+  //  for (int i = 0; i < 3; i++) {
+  //    Serial.print("{");
+  //    for (int j = 0; j < n; j++) {
+  //      Serial.print(traj[1][i]);
+  //      Serial.print(", ");
+  //    }
+  //    Serial.print("}, \n");
   //  }
   //  Serial.print("}");
 
-  //  double* q_goal_float = find_closest_point(q_curr, traj, n);
-  //
-  //  for (int i = 0; i < 3; i++) {
-  //    q_goal[i] = q_goal_float[i];
-  //  }
-
-  //    Serial.print("Contact Mode: ");
-  //    Serial.print(contactMode);
-  //    Serial.print("\t");
+  Serial.print("Contact Mode: ");
+  Serial.print(contactMode);
+  Serial.print("\t\t");
   //
   //  Serial.print("Alpha: {");
   //  Serial.print(alpha[0]);
@@ -179,29 +193,33 @@ void loop() {
   //  Serial.print("}");
   //  Serial.print("\t");
 
-  //  Serial.print("J0: ");
-  //  Serial.print(q_curr[0]);
-  //  Serial.print("\t");
+  Serial.print("J0: ");
+  Serial.print(q_curr[0]);
+  Serial.print("\t\t");
   //  Serial.print("J0 Goal: ");
   //  Serial.print(q_goal[0]);
   //  Serial.print("\t");
-  //
-  //
-  //  Serial.print("J1: ");
-  //  Serial.print(q_curr[1]);
-  //  Serial.print("\t");
-  //  Serial.print("J1 Goal: ");
-  //  Serial.print(q_goal[1]);
-  //  Serial.print("\t");
-  //
-  //
-  //  Serial.print("J2: ");
-  //  Serial.print(q_curr[2]);
-  //  Serial.print("\t");
-  //  Serial.print("J2 Goal: ");
-  //  Serial.print(q_goal[2]);
 
-  //  Serial.println();
+    Serial.print("J1: ");
+    Serial.print(q_curr[1]);
+    Serial.print("\t");
+  Serial.print("J1 Goal: ");
+  Serial.print(q_goal[1]);
+  Serial.print("\t\t");
+
+    Serial.print("J2: ");
+    Serial.print(q_curr[2]);
+    Serial.print("\t");
+  Serial.print("J2 Goal: ");
+  Serial.print(q_goal[2]);
+
+  double angle = 150.0;
+  int angle_in = map(angle, 0.0, 300.0, 0, 1023);
+
+  setM1Position(angle_in);
+  setM2Position(angle_in);
+
+  Serial.println();
 
   delay(50);
 
@@ -226,34 +244,34 @@ void loop() {
 
 
 // Function to find the closest point in a 2-D array to a 1-D array
-double* find_closest_point(double* q, double** traj, int n) {
+void find_closest_point(double*& q_goal, double* q, double**& traj, int n) {
   double min_dist = INFINITY;
-  double* q_goal = NULL;
+
   for (int i = 0; i < n; i++) {
-    double d1 = q[0] - traj[i][0];
-    double d2 = q[1] - traj[i][1];
-    double d3 = q[2] - traj[i][2];
+    double d1 = q[0] - traj[0][i];
+    double d2 = q[1] - traj[1][i];
+    double d3 = q[2] - traj[2][i];
     double dist = sqrt(d1 * d1 + d2 * d2 + d3 * d3);
     if (dist < min_dist) {
       min_dist = dist;
-      q_goal = traj[i];
+      q_goal[0] = traj[0][i];
+      q_goal[1] = traj[1][i];
+      q_goal[2] = traj[2][i];
     }
   }
-  return q_goal;
 }
 
-//double* linspace(double t1, double t2, int n) {
-//  double* vec[n];// = static_cast<double *>(malloc(n * sizeof(double)));
-//
-//
-//  return vec;
-//}
 
-double calculate_traj(double* q_curr, double* q_goal, double ts, double tf, int n) {
+void calculate_traj(double**& traj, double * q_curr, double * q_goal, double ts, double tf, int n) {
   int reverse;
   double t1, t2;
-  double trajPos[3][n];
-  
+
+  if (traj == nullptr) {
+    traj = new double*[3];
+    for (int i = 0; i < 3; i++) {
+      traj[i] = new double[n];
+    }
+  }
 
   if (tf < ts) {
     t1 = tf;
@@ -270,68 +288,67 @@ double calculate_traj(double* q_curr, double* q_goal, double ts, double tf, int 
     trajTime[i] = t1 + ((double) i) * (t2 - t1) / (((double) n) - 1.0);
   }
 
-  Serial.print("TrajPos: {");
-  Serial.print(trajPos[0][0]);
-//  Serial.print(", ");
-//  Serial.print(trajPos[1][1]);
-//  Serial.print(", ");
-//  Serial.print(trajPos[2][2]);
-//  Serial.print(", ");
-//  Serial.print(trajPos[n][0]);
-  Serial.println("}");
-  
-  for (int i = 0; i < n; i++) {
-    double tau = (trajTime[i] - t1) / (t2 - t1);
-//    Serial.print(tau);
-//    for (int j = 0; j < 3; j++) {
-//      trajPos[i][j] = q_curr[j] + (q_goal[j] - q_curr[j]) * (6 * pow(tau, 5) - 15 * pow(tau, 4) + 10 * pow(tau, 3));
-//    }
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < n; j++) {
+      double tau = (trajTime[j] - t1) / (t2 - t1);
+
+      traj[i][j] = (double)(q_curr[i] + (q_goal[i] - q_curr[i]) * (6.0 * pow(tau, 5.0) - 15.0 * pow(tau, 4.0) + 10.0 * pow(tau, 3.0)));
+    }
   }
-//  free(trajTime);
-  return (double **)trajPos;
+
 }
 
 
-int checkGuard(double* q_n, double* hollow_region, double* arch_region) {
+int checkGuard(double * q_n, double*& hollow_region, double*& arch_region) {
   static double val_prev[4] = {0.0, 0.0, 0.0, 0.0};
   static int set_prev = 0;
 
-  double* val_curr = static_cast<double *>(malloc(4 * sizeof(double)));
+  double val_curr[4];
   int trippedGuard = 0;
 
 
-  val_curr[0] = (2 * PI + q_n[0]) - arch_region[0] * 180.0 / PI;
-  val_curr[1] = (2 * PI + q_n[0]) - arch_region[1] * 180.0 / PI;
-  val_curr[2] = (2 * PI + q_n[0]) - hollow_region[0] * 180.0 / PI;
-  val_curr[3] = (2 * PI + q_n[0]) - hollow_region[1] * 180.0 / PI;
+  val_curr[0] = q_n[0] - arch_region[0];
+  val_curr[1] = q_n[0] - arch_region[1];
+  val_curr[2] = q_n[0] - hollow_region[0];
+  val_curr[3] = q_n[0] - hollow_region[1];
 
-  //  Serial.print("Guard Values: {");
-  //  Serial.print(val_curr[0]*val_prev[0] <= 0);
-  //  Serial.print(", ");
-  //  Serial.print(val_curr[1]*val_prev[1] <= 0);
-  //  Serial.print(", ");
-  //  Serial.print(val_curr[2]*val_prev[2] <= 0);
-  //  Serial.print(", ");
-  //  Serial.print(val_curr[3]*val_prev[3] <= 0);
-  //  Serial.print("}");
-  //  Serial.print("\t");
+  //    Serial.print("Guard Values: {");
+  //    Serial.print(val_curr[0]);
+  //    Serial.print(", ");
+  //    Serial.print(val_curr[1]);
+  //    Serial.print(", ");
+  //    Serial.print(val_curr[2]);
+  //    Serial.print(", ");
+  //    Serial.print(val_curr[3]);
+  //    Serial.print("}");
+  //    Serial.print("\t");
   //  Serial.println();
 
   if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0]) { //Entering arch region with negative velocity
     //    Serial.println("Guard 1 Tripped");
     trippedGuard = 2;
     //    Serial.println("Guard Tripped Set");
+  } else if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] > val_prev[0]) { //Exiting arch region with negative velocity
+    trippedGuard = 1;
+    //        Serial.println("Guard 2 Tripped");
   } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1]) { //Exiting arch region with negative velocity
     trippedGuard = 3;
+    //        Serial.println("Guard 2 Tripped");
+  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
+    trippedGuard = 2;
     //        Serial.println("Guard 2 Tripped");
   } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2]) { //Entering hollow region with negative velocity
     trippedGuard = 4;
     //        Serial.println("Guard 3 Tripped");
+  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
+    trippedGuard = 3;
+    //        Serial.println("Guard 3 Tripped");
   } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3]) { //Exiting hollow region with negative velocity
-    trippedGuard = 5;
+    trippedGuard = 1;
     //        Serial.println("Guard 4 Tripped");
-  } else if (q_n[0] > arch_region[0] * 180.0 / PI || q_n[0] < hollow_region[1] * 180.0 / PI) {
-    trippedGuard = 0;
+  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
+    trippedGuard = 4;
+    //        Serial.println("Guard 3 Tripped");
   }
 
   val_prev[0] = val_curr[0];
@@ -339,8 +356,6 @@ int checkGuard(double* q_n, double* hollow_region, double* arch_region) {
   val_prev[2] = val_curr[2];
   val_prev[3] = val_curr[3];
   set_prev = 0;
-
-
 
   return trippedGuard;
 }

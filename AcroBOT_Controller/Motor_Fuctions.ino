@@ -20,7 +20,7 @@ double getJ0EncoderPos() {
       ndx = 0;
     }
   }
-  encoderPos = atof(receivedChars);
+  encoderPos = atof(receivedChars) - 6.0;
   return encoderPos;
 }
 
@@ -94,9 +94,12 @@ int testSubSystems() {
   Serial.println(getJ0EncoderPos());
 
 
-  setM1Position(512);
-  setM2Position(512);
+//  setM1Position(512);
+//  setM2Position(512);
   delay(1000);
+  
+  Serial.println("Testing complete!");
+  delay(100);
   //setM1Position(600);
   //setM2Position(600);
   //delay(1000);
