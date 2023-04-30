@@ -28,8 +28,8 @@ double getJ0EncoderPos() {
 //return the reading from INA 169 current sensor
 // now it returns the raw ADC values
 // TODO -  convert the ADC value to current on Amperes
-int getMotorLoads() {
-  return (analogRead(analogInPin));
+float getMotorLoads() {
+  return analogRead(analogInPin)*(5.0/1024.0);
 }
 
 // set M1 position

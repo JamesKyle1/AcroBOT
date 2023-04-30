@@ -26,7 +26,7 @@
 
 DynamixelWorkbench dxl_wb;
 
-uint8_t dxl_id0 = 8;
+uint8_t dxl_id0 = 1;
 uint8_t dxl_id1 = 4;
 
 
@@ -44,11 +44,17 @@ const int analogInPin = A0;
 // ======= Controller Setup ======== /
 // ================================= /
 
-int n = 3;
+int n = 30;
 
-double alpha[3] = {0.0, 0.0, 0.0};
+double alpha_1[3] = {0.0, 0.0, 0.0};
+double alpha_2[3] = {0.0, 0.0, 0.0};
+double alpha_3[3] = {0.0, 0.0, 0.0};
+double alpha_4[3] = {0.0, 0.0, 0.0};
 
-double** traj = nullptr;
+//double** traj = nullptr;
+double** traj_2 = nullptr;
+double** traj_3 = nullptr;
+double** traj_4 = nullptr;
 double* q_goal = new double[3];
 
 double* hollow_region = new double[2];
@@ -57,6 +63,16 @@ double* arch_region = new double[2];
 int contactMode = 1;
 double tol = 1e-6;
 
+
+//Controller timer
+unsigned long currTime;
+long goal_loop_time = 10000;
+unsigned long loop_timer;
+
+
+
+bool takeData = false;
+bool printHeaders = false;
 
 
 
@@ -67,7 +83,7 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   // Serial  1 is available on PINS 11 and 12, and is connected to arduino UNO for reading the encoder
-  Serial1.begin(1000000);
+  Serial1.begin(115200);
   delay(100);
 
   //send commands to blink the LED on UNO, to verify everything is working
@@ -109,11 +125,40 @@ void setup() {
   hollow_region[0] = 90.0 + (270.0 - BETA + GAMMA);
   hollow_region[1] = 90.0 + (270.0 - BETA);
 
+
+  //Pre-calculate trajectories
+  alpha_1[0] = arch_region[0];
+  alpha_1[1] = 0.0;
+  alpha_1[2] = 0.0;
+
+  alpha_2[0] = arch_region[1];
+  alpha_2[1] = ALPHA;
+  alpha_2[2] = -ALPHA;
+
+  alpha_3[0] = hollow_region[0];
+  alpha_3[1] = 0.0;
+  alpha_3[2] = 0.0;
+
+  alpha_4[0] = hollow_region[1];
+  alpha_4[1] = -ALPHA;
+  alpha_4[2] = ALPHA;
+
+  calculate_traj(traj_2, alpha_1, alpha_2, n);
+  calculate_traj(traj_3, alpha_2, alpha_3, n);
+  calculate_traj(traj_4, alpha_3, alpha_4, n);
+
+
+  setM1Position(512);
+  setM2Position(512);
+
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  currTime = micros();
+  loop_timer = micros();
 
+  // put your main code here, to run repeatedly:
   double q0 = getJ0EncoderPos();
   double q1 = getM1Position() * 300.0 / 1024.0 - 150.0;
   double q2 = getM2Position() * 300.0 / 1024.0 - 150.0;
@@ -123,26 +168,6 @@ void loop() {
 
   if (guardTriggered > 0) {
     contactMode = guardTriggered;
-
-    if (contactMode == 2) {
-      alpha[0] = arch_region[1];
-      alpha[1] = ALPHA;
-      alpha[2] = -ALPHA;
-    } else if (contactMode == 4) {
-      alpha[0] = hollow_region[1];
-      alpha[1] = -ALPHA;
-      alpha[2] = ALPHA;
-    } else if (contactMode == 1 || contactMode == 5) {
-      alpha[0] = 0.0;
-      alpha[1] = 0.0;
-      alpha[2] = 0.0;
-    } else if (contactMode == 3) {
-      alpha[0] = hollow_region[0];
-      alpha[1] = 0.0;
-      alpha[2] = 0.0;
-    }
-
-    calculate_traj(traj, q_curr, alpha, n);
   }
 
   //Set goal angle based on current position
@@ -153,64 +178,59 @@ void loop() {
   }
 
 
-  if (contactMode == 2 || contactMode == 4 || contactMode == 3) {
-    if ((q_curr[0] - q_goal[0]) * (q_curr[0] - q_goal[0]) < tol * tol) {
-      q_goal[0] = alpha[0];
-      q_goal[1] = alpha[1];
-      q_goal[2] = alpha[2];
-    } else {
-      //      Serial.println("Finding closest point...");
-      find_closest_point(q_goal, q_curr, traj, n);
+  if (contactMode == 2) {
+    find_closest_point(q_goal, q_curr, traj_2, n);
+  }
+
+  if (contactMode == 3) {
+    find_closest_point(q_goal, q_curr, traj_3, n);
+  }
+
+  if (contactMode == 4) {
+    find_closest_point(q_goal, q_curr, traj_4, n);
+  }
+
+  if (Serial.available() > 0) {
+    int data = Serial.parseInt();
+    if (data == 1) {
+      takeData = true;
+      printHeaders = true;
+    } else if (data == 2) {
+      takeData = false;
     }
   }
 
-  //  Serial.print("Trajectory: {");
-  //  for (int i = 0; i < 3; i++) {
-  //    Serial.print("{");
-  //    for (int j = 0; j < n; j++) {
-  //      Serial.print(traj[i][j]);
-  //      Serial.print(", ");
-  //    }
-  //    Serial.print("}, \n");
-  //  }
-  //  Serial.println("}");
+  if (printHeaders) {
+    Serial.println("AcroBOT Hardware Experiments...");
+    Serial.println("Alpha [deg]\t Beta [deg]\t Gamma [deg]");
+    Serial.print(ALPHA);
+    Serial.print(", ");
+    Serial.print(BETA);
+    Serial.print(", ");
+    Serial.print(GAMMA);
+    Serial.println();
+    Serial.println("=================================================================================");
+    Serial.println("J0 Actual [deg]\t J0 Goal [deg]\t J1 Actual [deg]\t J1 Goal [deg]\tJ2 Actual [deg]\t J2 Goal [deg]\t Current [A]\t ");
+    printHeaders = false;
+  }
 
-//  Serial.print("Contact Mode: ");
-//  Serial.print(contactMode);
-//  Serial.print("\t\t");
+  if (takeData) {
+    Serial.print(q_curr[0]);
+    Serial.print(", ");
+    Serial.print(q_goal[0]);
+    Serial.print(", ");
+    Serial.print(q_curr[1]);
+    Serial.print(", ");
+    Serial.print(q_goal[1]);
+    Serial.print(", ");
+    Serial.print(q_curr[2]);
+    Serial.print(", ");
+    Serial.print(q_goal[2]);
+    Serial.print(", ");
+    Serial.print(getMotorLoads());
+    Serial.println();
+  }
 
-//  Serial.print("Alpha: {");
-//  Serial.print(alpha[0]);
-//  Serial.print(", ");
-//  Serial.print(alpha[1]);
-//  Serial.print(", ");
-//  Serial.print(alpha[2]);
-//  Serial.print("}");
-//  Serial.print("\t");
-
-//  Serial.print("J0: ");
-//  Serial.print(q_curr[0]);
-//  Serial.print("\t\t");
-//  Serial.print("J0 Goal: ");
-//  Serial.print(q_goal[0]);
-//  Serial.print("\t\t");
-//
-//  Serial.print("J1: ");
-//  Serial.print(q_curr[1]);
-//  Serial.print("\t  ");
-//  Serial.print("J1 Goal: ");
-//  Serial.print(q_goal[1]);
-//  Serial.print("\t\t");
-
-//  Serial.print("J2: ");
-//  Serial.print(q_curr[2]);
-//  Serial.print("\t");
-//  Serial.print("J2 Goal: ");
-//  Serial.print(q_goal[2]);
-
-  //  double angle = 0.0;
-  //  angle = angle + 150;
-  //  int angle_in = map(angle, 0.0, 300.0, 0, 1023);
 
   // Set joint angles
   int th2 = map(q_goal[1] + 150.0, 0.0, 300.0, 0, 1023);
@@ -218,13 +238,21 @@ void loop() {
 
   setM1Position(th2);
   setM2Position(th3);
-//    setM1Position(512);
-//    setM2Position(512);
+//  setM1Position(512);
+//  setM2Position(512);
 
+  currTime = micros() - currTime;
+
+  if (goal_loop_time > currTime) {
+    delayMicroseconds(goal_loop_time - currTime);
+  }
+
+  loop_timer = micros() - loop_timer;
+
+  //  Serial.print("Loop Time: ");
+  //  Serial.print(loop_timer);
 //  Serial.println();
-//
-//    delay(10);
-
+  //  delay(100);
 
 
 }
@@ -344,7 +372,7 @@ int checkGuard(double * q_n, double*& hollow_region, double*& arch_region, int c
   //    Serial.print("\t");
   //  Serial.println();
 
-  if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0] && contactMode == 1) { //Entering arch region with negative velocity
+  if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0]) { //Entering arch region with negative velocity
     //    Serial.println("Guard 1 Tripped");
     trippedGuard = 2;
     //    Serial.println("Guard Tripped Set");
@@ -353,24 +381,24 @@ int checkGuard(double * q_n, double*& hollow_region, double*& arch_region, int c
       trippedGuard = 1;
     }
     //        Serial.println("Guard 2 Tripped");
-  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1] && contactMode == 2) { //Exiting arch region with negative velocity
+  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1]) { //Exiting arch region with negative velocity
     trippedGuard = 3;
     //        Serial.println("Guard 2 Tripped");
-    //  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
-    //    trippedGuard = 2;
-    //    //        Serial.println("Guard 2 Tripped");
-  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2] && contactMode == 3) { //Entering hollow region with negative velocity
+  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
+    trippedGuard = 2;
+    //        Serial.println("Guard 2 Tripped");
+  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2]) { //Entering hollow region with negative velocity
     trippedGuard = 4;
     //        Serial.println("Guard 3 Tripped");
-    //  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
-    //    trippedGuard = 3;
-    //    //        Serial.println("Guard 3 Tripped");
-  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3] && contactMode == 4) { //Exiting hollow region with negative velocity
+  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
+    trippedGuard = 3;
+    //        Serial.println("Guard 3 Tripped");
+  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3]) { //Exiting hollow region with negative velocity
     trippedGuard = 5;
-    //        Serial.println("Guard 4 Tripped");
-    //  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
-    //    trippedGuard = 4;
-    //    //        Serial.println("Guard 3 Tripped");
+    //            Serial.println("Guard 4 Tripped");
+  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
+    trippedGuard = 4;
+    //        Serial.println("Guard 3 Tripped");
   }
 
   val_prev[0] = val_curr[0];
