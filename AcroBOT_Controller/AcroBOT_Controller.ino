@@ -215,21 +215,21 @@ void loop() {
   }
 
   if (takeData) {
-    Serial.print(millis()/1000.0,3);
-    Serial.print(", ");
+//    Serial.print(millis()/1000.0,3);
+//    Serial.print(", ");
     Serial.print(q_curr[0]);
     Serial.print(", ");
-    Serial.print(q_goal[0]);
-    Serial.print(", ");
-    Serial.print(q_curr[1]);
-    Serial.print(", ");
-    Serial.print(q_goal[1]);
-    Serial.print(", ");
-    Serial.print(q_curr[2]);
-    Serial.print(", ");
-    Serial.print(q_goal[2]);
-    Serial.print(", ");
-    Serial.print(getMotorLoads());
+//    Serial.print(q_goal[0]);
+//    Serial.print(", ");
+//    Serial.print(q_curr[1]);
+//    Serial.print(", ");
+//    Serial.print(q_goal[1]);
+//    Serial.print(", ");
+//    Serial.print(q_curr[2]);
+//    Serial.print(", ");
+//    Serial.print(q_goal[2]);
+//    Serial.print(", ");
+//    Serial.print(getMotorLoads());
     Serial.println();
   }
 

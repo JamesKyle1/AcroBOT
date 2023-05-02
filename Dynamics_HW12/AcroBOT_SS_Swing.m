@@ -79,3 +79,7 @@ legend('Interpreter','Latex');
 %%
 
 animateAcroBOT(x, dt, gymnastSYS);
+
+
+
+
