@@ -16,8 +16,8 @@
 
 #define FREE_FALL       0
 #define ALPHA           45.0
-#define BETA            250.0
-#define GAMMA           45.0
+#define BETA            245.0
+#define GAMMA           33.3
 
 
 // ================================== /
@@ -26,7 +26,7 @@
 
 DynamixelWorkbench dxl_wb;
 
-uint8_t dxl_id0 = 1;
+uint8_t dxl_id0 = 6;
 uint8_t dxl_id1 = 4;
 
 
@@ -132,16 +132,16 @@ void setup() {
   alpha_1[2] = 0.0;
 
   alpha_2[0] = arch_region[1];
-  alpha_2[1] = ALPHA;
-  alpha_2[2] = -ALPHA;
+  alpha_2[1] = -ALPHA;
+  alpha_2[2] = ALPHA;
 
   alpha_3[0] = hollow_region[0];
   alpha_3[1] = 0.0;
   alpha_3[2] = 0.0;
 
   alpha_4[0] = hollow_region[1];
-  alpha_4[1] = -ALPHA;
-  alpha_4[2] = ALPHA;
+  alpha_4[1] = ALPHA;
+  alpha_4[2] = -ALPHA;
 
   calculate_traj(traj_2, alpha_1, alpha_2, n);
   calculate_traj(traj_3, alpha_2, alpha_3, n);
@@ -210,11 +210,13 @@ void loop() {
     Serial.print(GAMMA);
     Serial.println();
     Serial.println("=================================================================================");
-    Serial.println("J0 Actual [deg]\t J0 Goal [deg]\t J1 Actual [deg]\t J1 Goal [deg]\tJ2 Actual [deg]\t J2 Goal [deg]\t Current [A]\t ");
+    Serial.println("Time [s]\t J0 Actual [deg]\t J0 Goal [deg]\t J1 Actual [deg]\t J1 Goal [deg]\tJ2 Actual [deg]\t J2 Goal [deg]\t Current [A]\t ");
     printHeaders = false;
   }
 
   if (takeData) {
+    Serial.print(millis()/1000.0,3);
+    Serial.print(", ");
     Serial.print(q_curr[0]);
     Serial.print(", ");
     Serial.print(q_goal[0]);
@@ -236,8 +238,8 @@ void loop() {
   int th2 = map(q_goal[1] + 150.0, 0.0, 300.0, 0, 1023);
   int th3 = map(q_goal[2] + 150.0, 0.0, 300.0, 0, 1023);
 
-  setM1Position(th2);
-  setM2Position(th3);
+//  setM1Position(th2);
+//  setM2Position(th3);
 //  setM1Position(512);
 //  setM2Position(512);
 
@@ -372,33 +374,50 @@ int checkGuard(double * q_n, double*& hollow_region, double*& arch_region, int c
   //    Serial.print("\t");
   //  Serial.println();
 
-  if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0]) { //Entering arch region with negative velocity
-    //    Serial.println("Guard 1 Tripped");
+//  if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0]) { //Entering arch region with negative velocity
+//    //    Serial.println("Guard 1 Tripped");
+//    trippedGuard = 2;
+//    //    Serial.println("Guard Tripped Set");
+//  } else if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] > val_prev[0]) { //Exiting arch region with negative velocity
+//    if (contactMode == 2 || contactMode == 5) {
+//      trippedGuard = 1;
+//    }
+//    //        Serial.println("Guard 2 Tripped");
+//  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1]) { //Exiting arch region with negative velocity
+//    trippedGuard = 3;
+//    //        Serial.println("Guard 2 Tripped");
+//  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
+//    trippedGuard = 2;
+//    //        Serial.println("Guard 2 Tripped");
+//  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2]) { //Entering hollow region with negative velocity
+//    trippedGuard = 4;
+//    //        Serial.println("Guard 3 Tripped");
+//  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
+//    trippedGuard = 3;
+//    //        Serial.println("Guard 3 Tripped");
+//  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3]) { //Exiting hollow region with negative velocity
+//    trippedGuard = 5;
+//    //            Serial.println("Guard 4 Tripped");
+//  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
+//    trippedGuard = 4;
+//    //        Serial.println("Guard 3 Tripped");
+//  }
+
+
+  if (q_n[0] > arch_region[0]) {
+    trippedGuard = 1;
+  }
+  if (q_n[0] <= arch_region[0] && q_n[0] >= arch_region[1]) {
     trippedGuard = 2;
-    //    Serial.println("Guard Tripped Set");
-  } else if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] > val_prev[0]) { //Exiting arch region with negative velocity
-    if (contactMode == 2 || contactMode == 5) {
-      trippedGuard = 1;
-    }
-    //        Serial.println("Guard 2 Tripped");
-  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1]) { //Exiting arch region with negative velocity
+  }
+  if (q_n[0] <= arch_region[1] && q_n[0] >= hollow_region[0]) {
     trippedGuard = 3;
-    //        Serial.println("Guard 2 Tripped");
-  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
-    trippedGuard = 2;
-    //        Serial.println("Guard 2 Tripped");
-  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2]) { //Entering hollow region with negative velocity
+  }
+  if (q_n[0] <= hollow_region[0] && q_n[0] >= hollow_region[1]) {
     trippedGuard = 4;
-    //        Serial.println("Guard 3 Tripped");
-  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
-    trippedGuard = 3;
-    //        Serial.println("Guard 3 Tripped");
-  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3]) { //Exiting hollow region with negative velocity
+  }
+  if (q_n[0] < hollow_region[1]) {
     trippedGuard = 5;
-    //            Serial.println("Guard 4 Tripped");
-  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
-    trippedGuard = 4;
-    //        Serial.println("Guard 3 Tripped");
   }
 
   val_prev[0] = val_curr[0];
