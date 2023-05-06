@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -18,6 +19,17 @@
 #define ALPHA           45.0
 #define BETA            245.0
 #define GAMMA           33.3
+
+//#define pin1    12
+//#define pin2    13
+//#define pin3    14
+//#define pin4    15
+//#define pin5    16
+//#define pin6    17
+//#define pin7    18
+//#define pin8    19
+//#define pin9    20
+//#define pin10   21
 
 
 // ================================== /
@@ -82,24 +94,35 @@ void setup() {
   // Default serial is the OPENCM - USB one
   Serial.begin(115200);
   delay(100);
-  // Serial  1 is available on PINS 11 and 12, and is connected to arduino UNO for reading the encoder
-  Serial1.begin(115200);
+  // Serial 3 is available on PINS 24 and 25, and is connected to arduino UNO for reading the encoder
+  Serial2.begin(115200);
   delay(100);
 
   //send commands to blink the LED on UNO, to verify everything is working
-  Serial1.print('i');
+  Serial2.print('i');
   delay(1000);
-  Serial1.print('o');
+  Serial2.print('o');
   delay(1000);
 
-  Serial1.print('i');
+  Serial2.print('i');
   delay(1000);
-  Serial1.print('o');
+  Serial2.print('o');
   delay(1000);
   //flush all buffers by reading any error values of any
   getJ0EncoderPos();
   getJ0EncoderPos();
   delay(100);
+
+//  pinMode(pin1,INPUT);
+//  pinMode(pin2,INPUT);
+//  pinMode(pin3,INPUT);
+//  pinMode(pin4,INPUT);
+//  pinMode(pin5,INPUT);
+//  pinMode(pin6,INPUT);
+//  pinMode(pin7,INPUT);
+//  pinMode(pin8,INPUT);
+//  pinMode(pin9,INPUT);
+//  pinMode(pin10,INPUT);
 
 
   // initialize dynamixels
@@ -221,14 +244,14 @@ void loop() {
     Serial.print(", ");
 //    Serial.print(q_goal[0]);
 //    Serial.print(", ");
-//    Serial.print(q_curr[1]);
-//    Serial.print(", ");
+    Serial.print(q_curr[1]);
+    Serial.print(", ");
 //    Serial.print(q_goal[1]);
 //    Serial.print(", ");
-//    Serial.print(q_curr[2]);
+    Serial.print(q_curr[2]);
 //    Serial.print(", ");
 //    Serial.print(q_goal[2]);
-//    Serial.print(", ");
+////    Serial.print(", ");
 //    Serial.print(getMotorLoads());
     Serial.println();
   }
