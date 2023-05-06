@@ -20,16 +20,16 @@
 #define BETA            245.0
 #define GAMMA           33.3
 
-//#define pin1    12
-//#define pin2    13
-//#define pin3    14
-//#define pin4    15
-//#define pin5    16
-//#define pin6    17
-//#define pin7    18
-//#define pin8    19
-//#define pin9    20
-//#define pin10   21
+#define pin1    12
+#define pin2    13
+#define pin3    14
+#define pin4    15
+#define pin5    7
+#define pin6    8
+#define pin7    9
+#define pin8    19
+#define pin9    20
+#define pin10   21
 
 
 // ================================== /
@@ -40,6 +40,7 @@ DynamixelWorkbench dxl_wb;
 
 uint8_t dxl_id0 = 6;
 uint8_t dxl_id1 = 4;
+uint8_t dxl_id2 = 1;
 
 
 //for the encoder data from UNO
@@ -113,16 +114,20 @@ void setup() {
   getJ0EncoderPos();
   delay(100);
 
-//  pinMode(pin1,INPUT);
-//  pinMode(pin2,INPUT);
-//  pinMode(pin3,INPUT);
-//  pinMode(pin4,INPUT);
-//  pinMode(pin5,INPUT);
-//  pinMode(pin6,INPUT);
-//  pinMode(pin7,INPUT);
-//  pinMode(pin8,INPUT);
-//  pinMode(pin9,INPUT);
-//  pinMode(pin10,INPUT);
+  pinMode(pin1,INPUT);
+  pinMode(pin2,INPUT);
+  pinMode(pin3,INPUT);
+  pinMode(pin4,INPUT);
+  pinMode(pin5,INPUT);
+  pinMode(pin6,INPUT);
+  pinMode(pin7,INPUT);
+  pinMode(pin8,INPUT);
+  pinMode(pin9,INPUT);
+  pinMode(pin10,INPUT);
+
+//  pinMode(16,OUTPUT);
+//  pinMode(17,OUTPUT);
+//  pinMode(18,OUTPUT);
 
 
   // initialize dynamixels
@@ -136,9 +141,13 @@ void setup() {
   //ping both dynamixels
   result = dxl_wb.ping(dxl_id0, &model_number, &log);
   result = dxl_wb.ping(dxl_id1, &model_number, &log);
+  result = dxl_wb.ping(dxl_id2, &model_number, &log);
+
   // set joint mode to position control mode
   result = dxl_wb.jointMode(dxl_id0, 0, 0, &log);
   result = dxl_wb.jointMode(dxl_id1, 0, 0, &log);
+    result = dxl_wb.jointMode(dxl_id2, 0, 0, &log);
+
 
   delay(100);
   testSubSystems();
@@ -182,10 +191,16 @@ void loop() {
   loop_timer = micros();
 
   // put your main code here, to run repeatedly:
-  double q0 = getJ0EncoderPos();
+  double q0 = getM0Position();//getJ0EncoderPos();
   double q1 = getM1Position() * 300.0 / 1024.0 - 150.0;
   double q2 = getM2Position() * 300.0 / 1024.0 - 150.0;
   double q_curr[3] = {q0, q1, q2}; //Should be set to the current states of the joints
+  Serial.print("Epos ");
+  Serial.print(q0);
+  Serial.print(',');
+  Serial.print(q1);
+  Serial.print(',');
+  Serial.println(q2);
 
   int guardTriggered = checkGuard(q_curr, hollow_region, arch_region, contactMode);
 
@@ -213,15 +228,25 @@ void loop() {
     find_closest_point(q_goal, q_curr, traj_4, n);
   }
 
-  if (Serial.available() > 0) {
-    int data = Serial.parseInt();
-    if (data == 1) {
-      takeData = true;
-      printHeaders = true;
-    } else if (data == 2) {
-      takeData = false;
-    }
-  }
+//  if (Serial.available() > 0) {
+//    int data = Serial.parseInt();
+//    if (data == 1) {
+//      takeData = true;
+//      printHeaders = true;
+//    } else if (data == 2) {
+//      takeData = false;
+//    }
+//  }
+
+//  digitalWrite(16,HIGH);
+//  digitalWrite(17,HIGH);
+//  digitalWrite(18,HIGH);
+//  delay(1000);
+//  digitalWrite(16,LOW);
+//  digitalWrite(17,LOW);
+//  digitalWrite(18,LOW);
+//  delay(1000);
+  
 
   if (printHeaders) {
     Serial.println("AcroBOT Hardware Experiments...");

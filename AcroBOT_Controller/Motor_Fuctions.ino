@@ -6,35 +6,57 @@
 //read encoder position from the arduino UNO
 double getJ0EncoderPos() {
   // send command to UNO
-  Serial2.print('e');
-  static byte ndx = 0;
-  char rc;
-  // receive data from UNO
-  while (Serial2.available() > 0) {
-    rc = Serial2.read();
-    if (rc != '\n') {
-      receivedChars[ndx] = rc;
-      ndx++;
-    } else {
-      receivedChars[ndx] = '\0';  // terminate the string
-      ndx = 0;
-    }
-  }
-  encoderPos = atof(receivedChars) - 6.0;
+//  Serial.print('e');
+//  static byte ndx = 0;
+//  char rc;
+//  // receive data from UNO
+//  while (Serial.available() > 0) {
+//    rc = Serial.read();
+//    if (rc != '\n') {
+//      receivedChars[ndx] = rc;
+//      ndx++;
+//    } else {
+//      receivedChars[ndx] = '\0';  // terminate the string
+//      ndx = 0;
+//    }
+//  }
+//  encoderPos = atof(receivedChars) - 6.0;
 //
-//  int inputPos = 0;
-//  inputPos += digitalRead(pin1);
-//  inputPos += 2*digitalRead(pin2);
-//  inputPos += 4*digitalRead(pin3);
-//  inputPos += 8*digitalRead(pin4);
-//  inputPos += 16*digitalRead(pin5);
-//  inputPos += 32*digitalRead(pin6);
-//  inputPos += 64*digitalRead(pin7);
-//  inputPos += 128*digitalRead(pin8);
-//  inputPos += 256*digitalRead(pin9);
-//  inputPos += 512*digitalRead(pin10);
-//
-//  double encoderPos = map(inputPos,0, 1023, 0.0, 360.0);
+  int inputPos = 0;
+  inputPos += digitalRead(pin1);
+  inputPos += 2*digitalRead(pin2);
+  inputPos += 4*digitalRead(pin3);
+  inputPos += 8*digitalRead(pin4);
+  inputPos += 16*digitalRead(pin5);
+  inputPos += 32*digitalRead(pin6);
+  inputPos += 64*digitalRead(pin7);
+  inputPos += 128*digitalRead(pin8);
+  inputPos += 256*digitalRead(pin9);
+  inputPos += 512*digitalRead(pin10);
+
+  double encoderPos = map(inputPos,0, 1023, 0.0, 360.0);
+
+  Serial.print(digitalRead(pin1));
+  Serial.print(", ");
+  Serial.print(digitalRead(pin2));
+  Serial.print(", ");
+  Serial.print(digitalRead(pin3));
+  Serial.print(", ");
+  Serial.print(digitalRead(pin4));
+  Serial.print(", ");
+  Serial.print(analogRead(pin5));
+  Serial.print(", ");
+  Serial.print(analogRead(pin6));
+  Serial.print(", ");
+  Serial.print(analogRead(pin7));
+  Serial.print(", ");
+  Serial.print(digitalRead(pin8));
+  Serial.print(", ");
+  Serial.print(digitalRead(pin9));
+  Serial.print(", ");
+  Serial.print(digitalRead(pin10));
+  Serial.println();
+  
 
   return encoderPos;
 }
@@ -76,6 +98,12 @@ double getM1Position() {
 double getM2Position() {
   int32_t get_data = 0;
   dxl_wb.itemRead(dxl_id1, "Present_Position", &get_data);  //, &log);
+  return get_data;
+}
+
+double getM0Position() {
+  int32_t get_data = 0;
+  dxl_wb.itemRead(dxl_id2, "Present_Position", &get_data);  //, &log);
   return get_data;
 }
 
