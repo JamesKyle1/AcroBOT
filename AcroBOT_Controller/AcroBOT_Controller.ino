@@ -20,17 +20,6 @@
 #define BETA            245.0
 #define GAMMA           33.3
 
-#define pin1    12
-#define pin2    13
-#define pin3    14
-#define pin4    15
-#define pin5    7
-#define pin6    8
-#define pin7    9
-#define pin8    19
-#define pin9    20
-#define pin10   21
-
 
 // ================================== /
 // ======== Dynamixel Setup ========= /
@@ -95,39 +84,28 @@ void setup() {
   // Default serial is the OPENCM - USB one
   Serial.begin(115200);
   delay(100);
-  // Serial 3 is available on PINS 24 and 25, and is connected to arduino UNO for reading the encoder
-  Serial2.begin(115200);
-  delay(100);
-
-  //send commands to blink the LED on UNO, to verify everything is working
-  Serial2.print('i');
-  delay(1000);
-  Serial2.print('o');
-  delay(1000);
-
-  Serial2.print('i');
-  delay(1000);
-  Serial2.print('o');
-  delay(1000);
+  //  // Serial 3 is available on PINS 24 and 25, and is connected to arduino UNO for reading the encoder
+  //  Serial2.begin(115200);
+  //  delay(100);
+  //
+  //  //send commands to blink the LED on UNO, to verify everything is working
+  //  Serial2.print('i');
+  //  delay(1000);
+  //  Serial2.print('o');
+  //  delay(1000);
+  //
+  //  Serial2.print('i');
+  //  delay(1000);
+  //  Serial2.print('o');
+  //  delay(1000);
   //flush all buffers by reading any error values of any
-  getJ0EncoderPos();
-  getJ0EncoderPos();
+  getM0Position();
+  getM0Position();
   delay(100);
 
-  pinMode(pin1,INPUT);
-  pinMode(pin2,INPUT);
-  pinMode(pin3,INPUT);
-  pinMode(pin4,INPUT);
-  pinMode(pin5,INPUT);
-  pinMode(pin6,INPUT);
-  pinMode(pin7,INPUT);
-  pinMode(pin8,INPUT);
-  pinMode(pin9,INPUT);
-  pinMode(pin10,INPUT);
-
-//  pinMode(16,OUTPUT);
-//  pinMode(17,OUTPUT);
-//  pinMode(18,OUTPUT);
+  //  pinMode(16,OUTPUT);
+  //  pinMode(17,OUTPUT);
+  //  pinMode(18,OUTPUT);
 
 
   // initialize dynamixels
@@ -146,7 +124,7 @@ void setup() {
   // set joint mode to position control mode
   result = dxl_wb.jointMode(dxl_id0, 0, 0, &log);
   result = dxl_wb.jointMode(dxl_id1, 0, 0, &log);
-    result = dxl_wb.jointMode(dxl_id2, 0, 0, &log);
+  //    result = dxl_wb.jointMode(dxl_id2, 0, 0, &log);
 
 
   delay(100);
@@ -164,16 +142,16 @@ void setup() {
   alpha_1[2] = 0.0;
 
   alpha_2[0] = arch_region[1];
-  alpha_2[1] = -ALPHA;
-  alpha_2[2] = ALPHA;
+  alpha_2[1] = ALPHA;
+  alpha_2[2] = -ALPHA;
 
   alpha_3[0] = hollow_region[0];
   alpha_3[1] = 0.0;
   alpha_3[2] = 0.0;
 
   alpha_4[0] = hollow_region[1];
-  alpha_4[1] = ALPHA;
-  alpha_4[2] = -ALPHA;
+  alpha_4[1] = -ALPHA;
+  alpha_4[2] = ALPHA;
 
   calculate_traj(traj_2, alpha_1, alpha_2, n);
   calculate_traj(traj_3, alpha_2, alpha_3, n);
@@ -191,16 +169,10 @@ void loop() {
   loop_timer = micros();
 
   // put your main code here, to run repeatedly:
-  double q0 = getM0Position();//getJ0EncoderPos();
+  double q0 = getM0Position() * 300.0 / 1024.0 + 44.0;//getJ0EncoderPos();
   double q1 = getM1Position() * 300.0 / 1024.0 - 150.0;
   double q2 = getM2Position() * 300.0 / 1024.0 - 150.0;
   double q_curr[3] = {q0, q1, q2}; //Should be set to the current states of the joints
-  Serial.print("Epos ");
-  Serial.print(q0);
-  Serial.print(',');
-  Serial.print(q1);
-  Serial.print(',');
-  Serial.println(q2);
 
   int guardTriggered = checkGuard(q_curr, hollow_region, arch_region, contactMode);
 
@@ -228,25 +200,16 @@ void loop() {
     find_closest_point(q_goal, q_curr, traj_4, n);
   }
 
-//  if (Serial.available() > 0) {
-//    int data = Serial.parseInt();
-//    if (data == 1) {
-//      takeData = true;
-//      printHeaders = true;
-//    } else if (data == 2) {
-//      takeData = false;
-//    }
-//  }
+  if (Serial.available() > 0) {
+    int data = Serial.parseInt();
+    if (data == 1) {
+      takeData = true;
+      printHeaders = true;
+    } else if (data == 2) {
+      takeData = false;
+    }
+  }
 
-//  digitalWrite(16,HIGH);
-//  digitalWrite(17,HIGH);
-//  digitalWrite(18,HIGH);
-//  delay(1000);
-//  digitalWrite(16,LOW);
-//  digitalWrite(17,LOW);
-//  digitalWrite(18,LOW);
-//  delay(1000);
-  
 
   if (printHeaders) {
     Serial.println("AcroBOT Hardware Experiments...");
@@ -263,21 +226,21 @@ void loop() {
   }
 
   if (takeData) {
-//    Serial.print(millis()/1000.0,3);
-//    Serial.print(", ");
+    Serial.print(millis() / 1000.0, 3);
+    Serial.print(", ");
     Serial.print(q_curr[0]);
     Serial.print(", ");
-//    Serial.print(q_goal[0]);
-//    Serial.print(", ");
+    Serial.print(q_goal[0]);
+    Serial.print(", ");
     Serial.print(q_curr[1]);
     Serial.print(", ");
-//    Serial.print(q_goal[1]);
-//    Serial.print(", ");
+    Serial.print(q_goal[1]);
+    Serial.print(", ");
     Serial.print(q_curr[2]);
-//    Serial.print(", ");
-//    Serial.print(q_goal[2]);
-////    Serial.print(", ");
-//    Serial.print(getMotorLoads());
+    Serial.print(", ");
+    Serial.print(q_goal[2]);
+    Serial.print(", ");
+    Serial.print(getMotorLoads());
     Serial.println();
   }
 
@@ -286,10 +249,10 @@ void loop() {
   int th2 = map(q_goal[1] + 150.0, 0.0, 300.0, 0, 1023);
   int th3 = map(q_goal[2] + 150.0, 0.0, 300.0, 0, 1023);
 
-//  setM1Position(th2);
-//  setM2Position(th3);
-//  setM1Position(512);
-//  setM2Position(512);
+  setM1Position(th2);
+  setM2Position(th3);
+  //  setM1Position(512);
+  //  setM2Position(512);
 
   currTime = micros() - currTime;
 
@@ -301,7 +264,7 @@ void loop() {
 
   //  Serial.print("Loop Time: ");
   //  Serial.print(loop_timer);
-//  Serial.println();
+  //  Serial.println();
   //  delay(100);
 
 
@@ -422,34 +385,34 @@ int checkGuard(double * q_n, double*& hollow_region, double*& arch_region, int c
   //    Serial.print("\t");
   //  Serial.println();
 
-//  if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0]) { //Entering arch region with negative velocity
-//    //    Serial.println("Guard 1 Tripped");
-//    trippedGuard = 2;
-//    //    Serial.println("Guard Tripped Set");
-//  } else if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] > val_prev[0]) { //Exiting arch region with negative velocity
-//    if (contactMode == 2 || contactMode == 5) {
-//      trippedGuard = 1;
-//    }
-//    //        Serial.println("Guard 2 Tripped");
-//  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1]) { //Exiting arch region with negative velocity
-//    trippedGuard = 3;
-//    //        Serial.println("Guard 2 Tripped");
-//  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
-//    trippedGuard = 2;
-//    //        Serial.println("Guard 2 Tripped");
-//  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2]) { //Entering hollow region with negative velocity
-//    trippedGuard = 4;
-//    //        Serial.println("Guard 3 Tripped");
-//  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
-//    trippedGuard = 3;
-//    //        Serial.println("Guard 3 Tripped");
-//  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3]) { //Exiting hollow region with negative velocity
-//    trippedGuard = 5;
-//    //            Serial.println("Guard 4 Tripped");
-//  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
-//    trippedGuard = 4;
-//    //        Serial.println("Guard 3 Tripped");
-//  }
+  //  if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] < val_prev[0]) { //Entering arch region with negative velocity
+  //    //    Serial.println("Guard 1 Tripped");
+  //    trippedGuard = 2;
+  //    //    Serial.println("Guard Tripped Set");
+  //  } else if (val_curr[0]*val_prev[0] <= 0 && val_curr[0] > val_prev[0]) { //Exiting arch region with negative velocity
+  //    if (contactMode == 2 || contactMode == 5) {
+  //      trippedGuard = 1;
+  //    }
+  //    //        Serial.println("Guard 2 Tripped");
+  //  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] < val_prev[1]) { //Exiting arch region with negative velocity
+  //    trippedGuard = 3;
+  //    //        Serial.println("Guard 2 Tripped");
+  //  } else if (val_curr[1]*val_prev[1] <= 0 && val_curr[1] > val_prev[1]) { //Exiting arch region with negative velocity
+  //    trippedGuard = 2;
+  //    //        Serial.println("Guard 2 Tripped");
+  //  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] < val_prev[2]) { //Entering hollow region with negative velocity
+  //    trippedGuard = 4;
+  //    //        Serial.println("Guard 3 Tripped");
+  //  } else if (val_curr[2]*val_prev[2] <= 0 && val_curr[2] > val_prev[2]) { //Entering hollow region with negative velocity
+  //    trippedGuard = 3;
+  //    //        Serial.println("Guard 3 Tripped");
+  //  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] < val_prev[3]) { //Exiting hollow region with negative velocity
+  //    trippedGuard = 5;
+  //    //            Serial.println("Guard 4 Tripped");
+  //  } else if (val_curr[3]*val_prev[3] <= 0 && val_curr[3] > val_prev[3]) { //Entering hollow region with negative velocity
+  //    trippedGuard = 4;
+  //    //        Serial.println("Guard 3 Tripped");
+  //  }
 
 
   if (q_n[0] > arch_region[0]) {

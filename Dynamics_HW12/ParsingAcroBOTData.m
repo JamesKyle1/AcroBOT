@@ -112,6 +112,7 @@ xlabel('$C_1 [m]$','interpreter','latex');
 ylabel('$C_2 [m]$');
 zlabel('$C_3 [m]$');
 colormap('parula');
+colorbar();
 %% 
 
 
@@ -296,6 +297,7 @@ xlabel('$L_1 [m]$','interpreter','latex');
 ylabel('$L_2 [m]$','interpreter','latex');
 zlabel('$L_3 [m]$','interpreter','latex');
 colormap('parula');
+colorbar();
 
 
 figure();
