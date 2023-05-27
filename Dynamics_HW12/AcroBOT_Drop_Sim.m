@@ -4,12 +4,12 @@ clear all;clc;close all;
 % Define start and stop times, set a dt to keep outputs at constant time
 % interval
 tstart = 0;
-tfinal = 17;
+tfinal = 30;
 dt = 0.01;
 
 
 % Initialize state and contact mode
-q0 = [0;0;0];
+q0 = [pi/4;0;0];
 disp(['Initial condition: [', num2str(q0'), ']''.'])
 dq0 = [0;0;0];
 x0 = [q0;dq0];
@@ -34,7 +34,7 @@ trajPosTracker = zeros(1,2);
 trajTimeTracker = zeros(1,2);
 
 
-alpha = pi/4;
+alpha = pi/3;
 beta = pi/6;
 gamma = pi/4;
 
@@ -88,6 +88,10 @@ legend('Interpreter','Latex');
 
 
 %% Animating Test Simulation
+
+% x = [pi/6 pi/6 pi/6 0 0 0];
+gymnastSYS.l = 3*[0.254;0.254;0.254];
+gymnastSYS.c = 3*gymnastSYS.l.*0.1;
 
 animateAcroBOT(x, dt, gymnastSYS);
 

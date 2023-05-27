@@ -89,11 +89,12 @@ for ii = 1:length(x)
     delete(endeffector);
     delete(joints);
     delete(com);
-    manipulator = line([base(1), joint1(1), joint2(1), joint3(1)], [base(2), joint1(2), joint2(2), joint3(2)], 'Color', [0;0;0],'LineStyle','-');
-    joints = line([joint1(1), joint2(1)], [joint1(2), joint2(2)],'Marker','.', 'MarkerSize', 20);
-    endeffector = line(joint3(1), joint3(2), 'Color', [1;0;0],'Marker','.', 'MarkerSize', 20);
-    addpoints(h,joint3(1), joint3(2));
-    com = line(comX, comY, 'Color', [0;0;0],'Marker','.', 'MarkerSize', 20);
+    barLine = line([-sum(l) sum(l)],[0 0], 'Color', [0;0;0],'LineStyle','--','linewidth',2);
+    manipulator = line([base(1), joint1(1), joint2(1), joint3(1)], [base(2), joint1(2), joint2(2), joint3(2)], 'Color', [0 0.4470 0.7410],'LineStyle','-','linewidth',3);
+    joints = line([joint1(1), joint2(1)], [joint1(2), joint2(2)],'Color',[0.6350 0.0780 0.1840],'Marker','.', 'MarkerSize', 30);
+    endeffector = line(base(1), base(2), 'Color', [0;0;0],'Marker','.', 'MarkerSize', 30);
+%     addpoints(h,joint3(1), joint3(2));
+%     com = line(comX, comY, 'Color', [0;0;0],'Marker','.', 'MarkerSize', 20);
     
     
     drawnow limitrate
